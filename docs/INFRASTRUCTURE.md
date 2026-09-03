@@ -2,7 +2,7 @@
 
 Vue 3 + Vite static site, deployed to S3 behind CloudFront (OAC, no public bucket), with a custom domain (`staging.vibecheckkits.com`) backed by an existing Route53 hosted zone (`vibecheckkits.com`) and an auto-issued/validated ACM certificate.
 
-Only the **staging** environment is provisioned in this pass. Add `production.tfvars` + the `terraform-plan-production.yml`/`terraform-production.yml`/`deploy-production.yml` triad later, following the staging files as a template, when production is ready.
+Only the **staging** environment is provisioned in this pass. Add `production.tfvars` + `terraform-production.yml`/`deploy-production.yml` later, following the staging files as a template, when production is ready.
 
 ## Architecture
 
@@ -33,10 +33,18 @@ terraform/
 └── staging.tfvars
 
 .github/workflows/
-├── terraform-plan-staging.yml   # PR → plan only, comments on the PR
-├── terraform-staging.yml        # push to `staging` or manual dispatch → apply/destroy
-└── deploy-staging.yml           # push to `staging` → build + sync to S3 + invalidate
+├── terraform-staging.yml   # single workflow: PR → forced plan + PR comment; push to `staging` → forced apply;
+│                           # manual dispatch → choose plan/apply/destroy from the Actions UI
+└── deploy-staging.yml      # push to `staging` → build + sync to S3 + invalidate
 ```
+
+`terraform-staging.yml` resolves its action per trigger, and a PR can never resolve to anything but `plan`:
+
+| Trigger | Resolved action | Notes |
+|---|---|---|
+| `pull_request` → `staging` | `plan` (forced) | Posts the plan as a PR comment. Never apply/destroy, regardless of any input. |
+| `push` → `staging` | `apply` (forced) | Same as merging a reviewed PR — auto-applies. |
+| `workflow_dispatch` | `plan` / `apply` / `destroy` (your choice) | For out-of-band plans, applies, or teardown from the Actions UI. |
 
 ## One-time account setup (manual — see Step 8/9 output for exact values)
 
@@ -96,7 +104,7 @@ Do these **in order**, from your local machine with your own (admin) AWS credent
    ```
 
 5. Create the `staging` GitHub environment and populate its variables from the `terraform apply` outputs (see the values table in the chat output).
-6. Push to the `staging` branch to trigger the first CI-driven deploy.
+6. Push to the `staging` branch to trigger the first CI-driven deploy (and, via `terraform-staging.yml`'s push trigger, the first CI-driven `terraform apply` for any subsequent infra changes).
 
 ## Notes specific to this stack
 
