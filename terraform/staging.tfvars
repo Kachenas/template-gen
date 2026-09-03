@@ -1,0 +1,11 @@
+environment         = "staging"
+github_environment  = "staging"
+aws_region          = "ap-southeast-1"
+github_org_repo     = "Kachenas/template-gen"
+github_oidc_sub     = "repo:Kachenas/template-gen" # placeholder — replace with "repo:Kachenas@<org-id>/template-gen@<repo-id>" from the workflow's debug OIDC step
+bucket_name         = "staging-sales-funnel-fe"
+api_base_url        = "https://staging-api.vibecheckkits.com" # placeholder — replace with the real backend staging API URL
+tf_state_bucket_arn = "arn:aws:s3:::sales-funnel-tf-state-fe"
+tf_lock_table_arn   = "arn:aws:dynamodb:ap-southeast-1:<ACCOUNT_ID>:table/sales-funnel-tf-lock-fe" # placeholder — replace <ACCOUNT_ID>
+custom_domain       = "staging.vibecheckkits.com"
+root_domain         = "vibecheckkits.com"
