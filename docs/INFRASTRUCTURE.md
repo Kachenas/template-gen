@@ -40,12 +40,63 @@ terraform/
 
 ## One-time account setup (manual — see Step 8/9 output for exact values)
 
-1. Create the Terraform state bucket + DynamoDB lock table (`references/terraform-frontend.md` bootstrap commands, substituting `sales-funnel`).
-2. Create the GitHub OIDC identity provider in the AWS account (one-time, if not already present from another project in this account).
+Do these **in order**, from your local machine with your own (admin) AWS credentials. Terraform cannot do step 1 or step 4 itself: `terraform init` needs the state bucket to already exist before it can even read this config, and CI can't authenticate until the IAM role from step 4 has been created once.
+
+1. Create the Terraform state bucket + DynamoDB lock table:
+
+   ```bash
+   aws s3api create-bucket \
+     --bucket sales-funnel-tf-state-fe \
+     --region ap-southeast-1 \
+     --create-bucket-configuration LocationConstraint=ap-southeast-1
+
+   aws s3api put-bucket-versioning \
+     --bucket sales-funnel-tf-state-fe \
+     --versioning-configuration Status=Enabled
+
+   aws s3api put-bucket-encryption \
+     --bucket sales-funnel-tf-state-fe \
+     --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+
+   aws s3api put-public-access-block \
+     --bucket sales-funnel-tf-state-fe \
+     --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+
+   aws dynamodb create-table \
+     --table-name sales-funnel-tf-lock-fe \
+     --attribute-definitions AttributeName=LockID,AttributeType=S \
+     --key-schema AttributeName=LockID,KeyType=HASH \
+     --billing-mode PAY_PER_REQUEST \
+     --region ap-southeast-1
+   ```
+
+2. Create the GitHub OIDC identity provider in the AWS account (one-time, if not already present from another project in this account):
+
+   ```bash
+   aws iam create-open-id-connect-provider \
+     --url https://token.actions.githubusercontent.com \
+     --client-id-list sts.amazonaws.com \
+     --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
+   ```
+
 3. Confirm the Route53 hosted zone for `vibecheckkits.com` already exists in this AWS account — `route53.tf` only reads it via a data source, it will not create it.
-4. Run the **first** `terraform apply` locally (not from CI — the deploy role doesn't exist yet for CI to assume).
-5. Create the `staging` GitHub environment and populate its variables (see the values table in the chat output).
-6. Push to the `staging` branch to trigger the first deploy.
+4. Fill in `terraform/staging.tfvars`'s two placeholders (`github_oidc_sub`, `tf_lock_table_arn`'s `<ACCOUNT_ID>`), then run the **first** `terraform init`/`plan`/`apply` locally (not from CI — the deploy role doesn't exist yet for CI to assume):
+
+   ```bash
+   cd terraform
+   terraform init \
+     -backend-config="bucket=sales-funnel-tf-state-fe" \
+     -backend-config="key=sales-funnel/staging/terraform.tfstate" \
+     -backend-config="region=ap-southeast-1" \
+     -backend-config="dynamodb_table=sales-funnel-tf-lock-fe" \
+     -backend-config="encrypt=true"
+
+   terraform plan -var-file=staging.tfvars
+   terraform apply -var-file=staging.tfvars
+   ```
+
+5. Create the `staging` GitHub environment and populate its variables from the `terraform apply` outputs (see the values table in the chat output).
+6. Push to the `staging` branch to trigger the first CI-driven deploy.
 
 ## Notes specific to this stack
 
