@@ -6,6 +6,6 @@ github_oidc_sub     = "repo:Kachenas@34016103/template-gen@1355581531" # from Gi
 bucket_name         = "staging-sales-funnel-fe"
 api_base_url        = "https://staging-api.vibecheckkits.com" # placeholder — replace with the real backend staging API URL
 tf_state_bucket_arn = "arn:aws:s3:::sales-funnel-tf-state-fe"
-tf_lock_table_arn   = "arn:aws:dynamodb:ap-southeast-1:<ACCOUNT_ID>:table/sales-funnel-tf-lock-fe" # placeholder — replace <ACCOUNT_ID>
+tf_lock_table_arn   = "arn:aws:dynamodb:ap-southeast-1:183614028822:table/sales-funnel-tf-lock-fe"
 custom_domain       = "staging.vibecheckkits.com"
 root_domain         = "vibecheckkits.com"
