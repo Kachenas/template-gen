@@ -64,6 +64,12 @@ resource "aws_s3_bucket_policy" "site" {
 resource "aws_secretsmanager_secret" "api_base_url" {
   name        = "frontend/${var.environment}/api-base-url"
   description = "Backend API base URL for the ${var.environment} frontend build"
+
+  # Without this, `terraform destroy` only schedules deletion (30-day
+  # recovery window by default), and a later `terraform apply` recreating
+  # the same secret name fails with InvalidRequestException until that
+  # window elapses or the secret is force-deleted by hand.
+  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "api_base_url" {
