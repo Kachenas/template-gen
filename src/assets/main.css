@@ -1,5 +1,202 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-primary: #4f46e5;
+  /* Brand */
+  --color-primary: #24dbc9;
+  --color-primary-content: #04120f;
+  --color-secondary: #0f172a;
+
+  /* Surfaces (dark-first — this is the only theme the marketing site renders) */
+  --color-bg: #05070d;
+  --color-bg-elevated: #0a0e1a;
+  --color-surface: #0f172a;
+  --color-surface-hover: #131c33;
+  --color-border: #ffffff1a;
+  --color-border-strong: #ffffff33;
+
+  /* Text */
+  --color-ink: #e8ecf4;
+  --color-ink-dim: #aab3c5;
+  --color-muted: #7c8aa3;
+  --color-ink-faint: #5b6b85; /* quietest tier — inactive states, captions, footer copy */
+
+  /* Aurora glow accents */
+  --color-glow-cyan: #22d3ee;
+  --color-glow-purple: #a855f7;
+  --color-glow-emerald: #34d399;
+
+  /* Type */
+  --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Radius */
+  --radius-glass: 1.25rem;
+  --radius-pill: 999px;
+
+  /* Easing (exposed as Tailwind `ease-*` utilities) */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+
+  /* Shadows / glow */
+  --shadow-glow-sm: 0 0 24px 0 color-mix(in srgb, var(--color-primary) 35%, transparent);
+  --shadow-glow-md: 0 0 64px 0 color-mix(in srgb, var(--color-primary) 30%, transparent);
+  --shadow-glass: 0 8px 32px 0 #00000066;
+
+  /* Content grid */
+  --content-max: 80rem; /* 1280px shared measure for every section */
+
+  /* Ambient motion (decorative only — the global prefers-reduced-motion rule below zeroes these) */
+  --animate-marquee: marquee 32s linear infinite;
+  --animate-pulse-glow: pulse-glow 2.8s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: var(--shadow-glow-sm);
+  }
+  50% {
+    box-shadow: var(--shadow-glow-md);
+  }
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+}
+
+/* Reusable design-system utilities shared by every section component */
+
+/* Real glass: reserve for hero-moment panels only (expensive backdrop-filter) */
+@utility glass-panel {
+  border-radius: var(--radius-glass);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, white 6%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-glass);
+}
+
+/* Cheap "glass" for repeated cards (pain cards, case studies, comparison rows) — no blur */
+@utility glass-panel-light {
+  border-radius: var(--radius-glass);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, white 4%, var(--color-surface));
+  box-shadow: var(--shadow-glass);
+}
+
+@utility text-glow {
+  text-shadow: 0 0 40px color-mix(in srgb, var(--color-primary) 55%, transparent);
+}
+
+@utility section-shell {
+  position: relative;
+  padding-block: clamp(4rem, 8vw, 8rem);
+}
+
+@utility content-shell {
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+/* Color is per-usage (pair with a text-* class) so each section can honor its own locked glow color. */
+@utility eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* Primary CTA — cyan glow, the only button that ever gets the glow treatment.
+   Padding/text-size are sizing concerns and stay with the component (GlowButton), not here. */
+@utility btn-primary-glow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  font-weight: 600;
+  box-shadow: var(--shadow-glow-sm);
+  transition:
+    box-shadow var(--duration-slow, 0.3s) var(--ease-out-expo),
+    transform var(--duration-slow, 0.3s) var(--ease-out-expo);
+
+  &:hover {
+    box-shadow: var(--shadow-glow-md);
+    transform: translateY(-2px);
+  }
+}
+
+/* Secondary CTA — glass, never competes with the primary glow */
+@utility btn-secondary-glass {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-ink);
+  font-weight: 600;
+  background: color-mix(in srgb, white 4%, transparent);
+  transition: border-color 0.3s var(--ease-out-expo);
+
+  &:hover {
+    border-color: var(--color-primary);
+  }
+}
+
+/* Base aurora-mesh recipe — AnimatedBackground.vue animates these blobs' position/opacity */
+@utility aurora-mesh {
+  background-image:
+    radial-gradient(
+      40% 40% at 20% 20%,
+      color-mix(in srgb, var(--color-glow-cyan) 35%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      35% 35% at 80% 30%,
+      color-mix(in srgb, var(--color-glow-purple) 28%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      45% 45% at 50% 90%,
+      color-mix(in srgb, var(--color-glow-emerald) 22%, transparent),
+      transparent
+    );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -1,10 +1,10 @@
 <template>
   <div class="flex flex-1 items-center justify-center px-6 py-12">
-    <div class="w-full max-w-sm">
-      <h1 class="text-2xl font-bold text-gray-900">
+    <div class="glass-panel-light w-full max-w-sm p-8">
+      <h1 class="font-display text-2xl font-bold text-white">
         Create an account
       </h1>
-      <p class="mt-1 text-sm text-gray-500">
+      <p class="mt-1 text-sm text-ink-dim">
         Register to submit and track your support tickets.
       </p>
 
@@ -12,13 +12,13 @@
         class="mt-6 space-y-4"
         @submit.prevent="onSubmit"
       >
-        <Input
+        <GlowInput
           v-model="form.name"
           label="Name"
           placeholder="Jane Customer"
           :error-message="errors.name"
         />
-        <Input
+        <GlowInput
           v-model="form.email"
           type="email"
           label="Email"
@@ -26,7 +26,7 @@
           autocomplete="email"
           :error-message="errors.email"
         />
-        <Input
+        <GlowInput
           v-model="form.password"
           type="password"
           label="Password"
@@ -34,7 +34,7 @@
           autocomplete="new-password"
           :error-message="errors.password"
         />
-        <Input
+        <GlowInput
           v-model="form.password_confirmation"
           type="password"
           label="Confirm password"
@@ -43,20 +43,20 @@
           :error-message="errors.password_confirmation"
         />
 
-        <Button
+        <GlowButton
           type="submit"
-          class="w-full"
-          :loading="loading"
+          :disabled="loading"
+          class="w-full justify-center"
         >
-          Sign up
-        </Button>
+          {{ loading ? 'Creating account…' : 'Sign up' }}
+        </GlowButton>
       </form>
 
-      <p class="mt-6 text-center text-sm text-gray-500">
+      <p class="mt-6 text-center text-sm text-ink-dim">
         Already have an account?
         <router-link
           to="/login"
-          class="font-medium text-primary"
+          class="font-medium text-primary hover:underline"
         >
           Log in
         </router-link>
@@ -72,8 +72,8 @@ import { toast } from 'vue-sonner'
 import { useAuth } from '@/composables/useAuth'
 import { getErrorMessage } from '@/utils/errorHandler'
 import type { IRegisterPayload } from '@/types/authInterface'
-import Button from '@/components/ui/Button.vue'
-import Input from '@/components/ui/Input.vue'
+import GlowButton from '@/components/ui/GlowButton.vue'
+import GlowInput from '@/components/ui/GlowInput.vue'
 
 const router = useRouter()
 const { register, loading } = useAuth()
