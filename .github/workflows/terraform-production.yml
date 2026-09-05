@@ -24,11 +24,13 @@ on:
           - destroy
 
 concurrency:
-  # PR plans are per-PR and safe to cancel/replace; apply/destroy (push or
-  # manual dispatch) share one group and are never auto-cancelled, so an
-  # in-progress apply can't be interrupted mid-flight.
-  group: ${{ github.event_name == 'pull_request' && format('terraform-production-plan-{0}', github.ref) || 'terraform-production-apply' }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # One shared group for every event type (PR plan, push apply, manual
+  # dispatch) — they all touch the same Terraform state/lock, so they must
+  # queue behind each other rather than race for it. Never cancel-in-progress:
+  # killing a run mid-operation skips Terraform's unlock step and leaves a
+  # stale lock in DynamoDB that blocks every future run until force-unlocked.
+  group: terraform-production
+  cancel-in-progress: false
 
 permissions:
   id-token: write
