@@ -1,0 +1,11 @@
+environment         = "production"
+github_environment  = "production"
+aws_region          = "ap-southeast-1"
+github_org_repo     = "Kachenas/template-gen"
+github_oidc_sub     = "repo:Kachenas@34016103/template-gen@1355581531" # repo-level, same as staging — only github_environment differs
+bucket_name         = "production-sales-funnel-fe"
+api_base_url        = "https://api.vibecheckkits.com" # placeholder — NOT LIVE — replace with the real production backend API URL before go-live
+tf_state_bucket_arn = "arn:aws:s3:::sales-funnel-tf-state-fe"
+tf_lock_table_arn   = "arn:aws:dynamodb:ap-southeast-1:183614028822:table/sales-funnel-tf-lock-fe"
+custom_domain       = "vibecheckkits.com"
+root_domain         = "vibecheckkits.com"

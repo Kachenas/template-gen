@@ -1,9 +1,9 @@
-name: Deploy to Staging
+name: Deploy to Production
 
 on:
   push:
     branches:
-      - staging
+      - main
     paths-ignore:
       - "terraform/**"
       - "docs/**"
@@ -18,9 +18,9 @@ permissions:
 
 jobs:
   deploy:
-    name: Build & Deploy to Staging
+    name: Build & Deploy to Production
     runs-on: ubuntu-latest
-    environment: staging
+    environment: production
 
     steps:
       - name: Checkout code
