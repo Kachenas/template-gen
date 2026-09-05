@@ -2,7 +2,7 @@
 
 Vue 3 + Vite static site, deployed to S3 behind CloudFront (OAC, no public bucket), with a custom domain backed by an existing Route53 hosted zone (`vibecheckkits.com`) and an auto-issued/validated ACM certificate.
 
-Two environments are provisioned: **staging** (`staging-portal.vibecheckkits.com`, triggered off the `staging` branch) and **production** (the apex `vibecheckkits.com`, triggered off `main`, gated by required-reviewer approval on the `production` GitHub Environment — see "Production-specific notes" below).
+Two environments are provisioned: **staging** (`staging-portal.vibecheckkits.com`, triggered off the `staging` branch) and **production** (`eservice.vibecheckkits.com`, triggered off `main`, gated by required-reviewer approval on the `production` GitHub Environment — see "Production-specific notes" below).
 
 ## Architecture
 
@@ -18,7 +18,7 @@ Browser → <domain> → CloudFront (OAC) → S3 bucket (private)
                     Route53 A-alias record → CloudFront
 
   staging domain:    staging-portal.vibecheckkits.com
-  production domain: vibecheckkits.com (apex)
+  production domain: eservice.vibecheckkits.com
 ```
 
 ## Directory layout
@@ -123,11 +123,13 @@ Do these **in order**, from your local machine with your own (admin) AWS credent
 Production reuses the same shared account-level infrastructure as staging (Terraform state bucket, DynamoDB lock table, GitHub OIDC provider, Route53 hosted zone) — only a separate state key (`sales-funnel/production/terraform.tfstate`), S3 bucket, CloudFront distribution, and IAM role (scoped to `environment:production` in its OIDC trust condition) are new.
 
 - **Approval gate.** The `production` GitHub Environment has required reviewers configured (Settings → Environments → production). Because both `terraform-production.yml` and `deploy-production.yml` declare `environment: production`, every run of either workflow — plan, apply, destroy, or deploy — pauses for manual approval before executing. This is a GitHub Environment protection rule, not something expressed in the workflow YAML itself.
-- **Apex domain.** `custom_domain = "vibecheckkits.com"` in `production.tfvars` is the bare apex, not a subdomain. `route53.tf`'s `aws_route53_record.site_alias` creates an `A`-alias record at the apex — before the first apply, confirm no conflicting `A` record already exists there:
+- **Domain.** `custom_domain = "eservice.vibecheckkits.com"` in `production.tfvars` is a subdomain of the same `root_domain` hosted zone staging uses. An earlier attempt used the bare apex (`vibecheckkits.com`) and failed with CloudFront's `CNAMEAlreadyExists` — that alias was already attached to a different, pre-existing CloudFront distribution (CloudFront enforces global uniqueness on Alternate Domain Names across all of AWS, independent of Route53). Before applying, it's still worth a quick check that nothing already claims this specific subdomain, in both Route53 and CloudFront:
   ```bash
   ZONE_ID=$(aws route53 list-hosted-zones-by-name --dns-name vibecheckkits.com. --query "HostedZones[0].Id" --output text)
   aws route53 list-resource-record-sets --hosted-zone-id "$ZONE_ID" \
-    --query "ResourceRecordSets[?Name=='vibecheckkits.com.']"
+    --query "ResourceRecordSets[?Name=='eservice.vibecheckkits.com.']"
+  aws cloudfront list-distributions \
+    --query "DistributionList.Items[?contains(Aliases.Items, 'eservice.vibecheckkits.com')]"
   ```
 - **Bootstrap order** mirrors staging's One-time account setup above, with these production-specific substitutions: use `production.tfvars` and `-backend-config="key=sales-funnel/production/terraform.tfstate"` for the first local `terraform init`/`plan`/`apply`; create the `production` GitHub Environment (with required reviewers) instead of `staging`; populate its variables from this stack's own `terraform output`; then push to `main` to trigger the first CI-driven deploy/apply.
 - **`api_base_url`** in `production.tfvars` is a placeholder (`https://api.vibecheckkits.com`) until the production backend is live — update it (and the `API_BASE_URL` GitHub Environment variable) before go-live.
