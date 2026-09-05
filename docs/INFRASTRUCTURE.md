@@ -1,21 +1,24 @@
 # Infrastructure — sales-funnel Frontend
 
-Vue 3 + Vite static site, deployed to S3 behind CloudFront (OAC, no public bucket), with a custom domain (`staging.vibecheckkits.com`) backed by an existing Route53 hosted zone (`vibecheckkits.com`) and an auto-issued/validated ACM certificate.
+Vue 3 + Vite static site, deployed to S3 behind CloudFront (OAC, no public bucket), with a custom domain backed by an existing Route53 hosted zone (`vibecheckkits.com`) and an auto-issued/validated ACM certificate.
 
-Only the **staging** environment is provisioned in this pass. Add `production.tfvars` + `terraform-production.yml`/`deploy-production.yml` later, following the staging files as a template, when production is ready.
+Two environments are provisioned: **staging** (`staging-portal.vibecheckkits.com`, triggered off the `staging` branch) and **production** (the apex `vibecheckkits.com`, triggered off `main`, gated by required-reviewer approval on the `production` GitHub Environment — see "Production-specific notes" below).
 
 ## Architecture
 
 ```
-GitHub Actions (push to `staging`)
+GitHub Actions (push to `staging` / `main`)
   → npm run build (VITE_API_BASE_URL injected)
-  → aws s3 sync dist/ → S3 bucket (staging-sales-funnel-fe)
+  → aws s3 sync dist/ → S3 bucket (<environment>-sales-funnel-fe)
   → CloudFront invalidation
                                    ┌────────────────────────┐
-Browser → staging.vibecheckkits.com → CloudFront (OAC) → S3 bucket (private)
+Browser → <domain> → CloudFront (OAC) → S3 bucket (private)
                                    └────────────────────────┘
                     ACM cert (us-east-1, DNS-validated via Route53)
                     Route53 A-alias record → CloudFront
+
+  staging domain:    staging-portal.vibecheckkits.com
+  production domain: vibecheckkits.com (apex)
 ```
 
 ## Directory layout
@@ -30,20 +33,23 @@ terraform/
 ├── cloudfront.tf    # distribution + OAC
 ├── route53.tf        # zone lookup, ACM cert + DNS validation, alias record
 ├── outputs.tf
-└── staging.tfvars
+├── staging.tfvars
+└── production.tfvars
 
 .github/workflows/
-├── terraform-staging.yml   # single workflow: PR → forced plan + PR comment; push to `staging` → forced apply;
-│                           # manual dispatch → choose plan/apply/destroy from the Actions UI
-└── deploy-staging.yml      # push to `staging` → build + sync to S3 + invalidate
+├── terraform-staging.yml      # single workflow: PR → forced plan + PR comment; push to `staging` → forced apply;
+│                               # manual dispatch → choose plan/apply/destroy from the Actions UI
+├── deploy-staging.yml         # push to `staging` → build + sync to S3 + invalidate
+├── terraform-production.yml   # same shape as terraform-staging.yml, but targets `main` and environment: production
+└── deploy-production.yml      # same shape as deploy-staging.yml, but targets `main` and environment: production
 ```
 
-`terraform-staging.yml` resolves its action per trigger, and a PR can never resolve to anything but `plan`:
+Both `terraform-*.yml` workflows resolve their action per trigger, and a PR can never resolve to anything but `plan`:
 
 | Trigger | Resolved action | Notes |
 |---|---|---|
-| `pull_request` → `staging` | `plan` (forced) | Posts the plan as a PR comment. Never apply/destroy, regardless of any input. |
-| `push` → `staging` | `apply` (forced) | Same as merging a reviewed PR — auto-applies. |
+| `pull_request` → `staging`/`main` | `plan` (forced) | Posts the plan as a PR comment. Never apply/destroy, regardless of any input. |
+| `push` → `staging`/`main` | `apply` (forced) | Same as merging a reviewed PR — auto-applies (production additionally pauses for required-reviewer approval, see below). |
 | `workflow_dispatch` | `plan` / `apply` / `destroy` (your choice) | For out-of-band plans, applies, or teardown from the Actions UI. |
 
 ## One-time account setup (manual — see Step 8/9 output for exact values)
@@ -111,3 +117,17 @@ Do these **in order**, from your local machine with your own (admin) AWS credent
 - **ACM/DNS is fully Terraform-managed.** `route53.tf` requests the cert in `us-east-1` (required by CloudFront regardless of the stack's own region), writes the DNS validation records into the existing zone, waits for validation, then creates the `A` alias record pointing `staging.vibecheckkits.com` at the distribution. The very first apply may take several minutes while ACM validates.
 - **SPA routing** is handled via CloudFront custom error responses (403 and 404 → `/index.html`, 200) rather than S3 website hosting — required because the bucket has all public access blocked and is only reachable via CloudFront OAC.
 - `bucket_name` (`staging-sales-funnel-fe`) must be globally unique across all of S3. If Terraform fails with `BucketAlreadyOwnedByYou` or `BucketAlreadyExists`, pick a different name in `staging.tfvars`.
+
+## Production-specific notes
+
+Production reuses the same shared account-level infrastructure as staging (Terraform state bucket, DynamoDB lock table, GitHub OIDC provider, Route53 hosted zone) — only a separate state key (`sales-funnel/production/terraform.tfstate`), S3 bucket, CloudFront distribution, and IAM role (scoped to `environment:production` in its OIDC trust condition) are new.
+
+- **Approval gate.** The `production` GitHub Environment has required reviewers configured (Settings → Environments → production). Because both `terraform-production.yml` and `deploy-production.yml` declare `environment: production`, every run of either workflow — plan, apply, destroy, or deploy — pauses for manual approval before executing. This is a GitHub Environment protection rule, not something expressed in the workflow YAML itself.
+- **Apex domain.** `custom_domain = "vibecheckkits.com"` in `production.tfvars` is the bare apex, not a subdomain. `route53.tf`'s `aws_route53_record.site_alias` creates an `A`-alias record at the apex — before the first apply, confirm no conflicting `A` record already exists there:
+  ```bash
+  ZONE_ID=$(aws route53 list-hosted-zones-by-name --dns-name vibecheckkits.com. --query "HostedZones[0].Id" --output text)
+  aws route53 list-resource-record-sets --hosted-zone-id "$ZONE_ID" \
+    --query "ResourceRecordSets[?Name=='vibecheckkits.com.']"
+  ```
+- **Bootstrap order** mirrors staging's One-time account setup above, with these production-specific substitutions: use `production.tfvars` and `-backend-config="key=sales-funnel/production/terraform.tfstate"` for the first local `terraform init`/`plan`/`apply`; create the `production` GitHub Environment (with required reviewers) instead of `staging`; populate its variables from this stack's own `terraform output`; then push to `main` to trigger the first CI-driven deploy/apply.
+- **`api_base_url`** in `production.tfvars` is a placeholder (`https://api.vibecheckkits.com`) until the production backend is live — update it (and the `API_BASE_URL` GitHub Environment variable) before go-live.
