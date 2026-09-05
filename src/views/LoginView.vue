@@ -1,10 +1,10 @@
 <template>
   <div class="flex flex-1 items-center justify-center px-6 py-12">
-    <div class="w-full max-w-sm">
-      <h1 class="text-2xl font-bold text-gray-900">
+    <div class="glass-panel-light w-full max-w-sm p-8">
+      <h1 class="font-display text-2xl font-bold text-white">
         Log in
       </h1>
-      <p class="mt-1 text-sm text-gray-500">
+      <p class="mt-1 text-sm text-ink-dim">
         Log in to submit and track your support tickets.
       </p>
 
@@ -12,7 +12,7 @@
         class="mt-6 space-y-4"
         @submit.prevent="onSubmit"
       >
-        <Input
+        <GlowInput
           v-model="form.email"
           type="email"
           label="Email"
@@ -20,7 +20,7 @@
           autocomplete="email"
           :error-message="errors.email"
         />
-        <Input
+        <GlowInput
           v-model="form.password"
           type="password"
           label="Password"
@@ -29,20 +29,20 @@
           :error-message="errors.password"
         />
 
-        <Button
+        <GlowButton
           type="submit"
-          class="w-full"
-          :loading="loading"
+          :disabled="loading"
+          class="w-full justify-center"
         >
-          Log in
-        </Button>
+          {{ loading ? 'Logging in…' : 'Log in' }}
+        </GlowButton>
       </form>
 
-      <p class="mt-6 text-center text-sm text-gray-500">
+      <p class="mt-6 text-center text-sm text-ink-dim">
         Don't have an account?
         <router-link
           to="/register"
-          class="font-medium text-primary"
+          class="font-medium text-primary hover:underline"
         >
           Sign up
         </router-link>
@@ -58,8 +58,8 @@ import { toast } from 'vue-sonner'
 import { useAuth } from '@/composables/useAuth'
 import { getErrorMessage } from '@/utils/errorHandler'
 import type { ILoginPayload } from '@/types/authInterface'
-import Button from '@/components/ui/Button.vue'
-import Input from '@/components/ui/Input.vue'
+import GlowButton from '@/components/ui/GlowButton.vue'
+import GlowInput from '@/components/ui/GlowInput.vue'
 
 const route = useRoute()
 const router = useRouter()

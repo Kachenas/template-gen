@@ -1,18 +1,18 @@
 <template>
-  <div class="flex min-h-screen flex-col">
-    <header class="border-b border-gray-100 bg-white">
-      <div class="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+  <div class="flex min-h-screen flex-col bg-bg">
+    <header class="border-b border-border">
+      <div class="content-shell flex items-center justify-between py-4">
         <router-link
           to="/"
-          class="text-lg font-bold text-gray-900"
+          class="font-display text-lg font-bold text-white"
         >
-          Client Portal
+          VibeCheckKits
         </router-link>
         <nav class="flex items-center gap-4 text-sm font-medium">
           <template v-if="isAuthenticated">
             <router-link
               to="/dashboard"
-              class="text-gray-600 hover:text-gray-900"
+              class="text-ink-dim transition-colors hover:text-white"
             >
               Dashboard
             </router-link>
@@ -20,13 +20,13 @@
           <template v-else>
             <router-link
               to="/login"
-              class="text-gray-600 hover:text-gray-900"
+              class="text-ink-dim transition-colors hover:text-white"
             >
               Log in
             </router-link>
             <router-link
               to="/register"
-              class="rounded-lg bg-primary px-4 py-2 text-white hover:shadow-md"
+              class="btn-primary-glow inline-flex items-center gap-1.5 px-5 py-2 text-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:outline-none"
             >
               Sign up
             </router-link>
@@ -39,8 +39,8 @@
       <router-view />
     </main>
 
-    <footer class="border-t border-gray-100 py-6 text-center text-sm text-gray-400">
-      &copy; {{ new Date().getFullYear() }} Client Portal
+    <footer class="border-t border-border py-6 text-center text-sm text-ink-faint">
+      &copy; {{ year }} VibeCheckKits
     </footer>
   </div>
 </template>
@@ -49,4 +49,5 @@
 import { useAuth } from '@/composables/useAuth'
 
 const { isAuthenticated } = useAuth()
+const year = new Date().getFullYear()
 </script>

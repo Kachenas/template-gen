@@ -1,4 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router'
+import LandingLayout from '@/layouts/LandingLayout.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import HomeView from '@/views/HomeView.vue'
@@ -9,12 +10,18 @@ import DashboardView from '@/views/DashboardView.vue'
 export const routes: RouteRecordRaw[] = [
   {
     path: '/',
+    component: LandingLayout,
+    children: [{ path: '', name: 'home', component: HomeView }],
+  },
+  {
+    path: '/login',
     component: DefaultLayout,
-    children: [
-      { path: '', name: 'home', component: HomeView },
-      { path: 'login', name: 'login', component: LoginView },
-      { path: 'register', name: 'register', component: RegisterView },
-    ],
+    children: [{ path: '', name: 'login', component: LoginView }],
+  },
+  {
+    path: '/register',
+    component: DefaultLayout,
+    children: [{ path: '', name: 'register', component: RegisterView }],
   },
   {
     path: '/dashboard',

@@ -1,33 +1,29 @@
 <template>
-  <div class="flex flex-1 flex-col items-center justify-center px-6 text-center">
-    <h1 class="text-4xl font-bold text-gray-900">
-      Welcome
-    </h1>
-    <p class="mt-2 text-gray-500">
-      Submit and track your support tickets from one place.
-    </p>
-
-    <div class="mt-6 flex gap-3">
-      <router-link
-        v-if="!isAuthenticated"
-        to="/register"
-        class="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:shadow-md"
-      >
-        Get started
-      </router-link>
-      <router-link
-        v-else
-        to="/dashboard"
-        class="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:shadow-md"
-      >
-        Go to dashboard
-      </router-link>
-    </div>
-  </div>
+  <HeroSection />
+  <PainSection />
+  <ComparisonSection />
+  <ServicesSection />
+  <ProcessTimeline />
+  <CaseStudiesSection />
+  <TechStackSection />
+  <DifferentiatorTable />
+  <TestimonialsSection />
+  <AuditCTASection />
+  <FAQSection />
+  <FooterCTA />
 </template>
 
 <script setup lang="ts">
-import { useAuth } from '@/composables/useAuth'
-
-const { isAuthenticated } = useAuth()
+import HeroSection from '@/components/sections/HeroSection.vue'
+import PainSection from '@/components/sections/PainSection.vue'
+import ComparisonSection from '@/components/sections/ComparisonSection.vue'
+import ServicesSection from '@/components/sections/ServicesSection.vue'
+import ProcessTimeline from '@/components/sections/ProcessTimeline.vue'
+import CaseStudiesSection from '@/components/sections/CaseStudiesSection.vue'
+import TechStackSection from '@/components/sections/TechStackSection.vue'
+import DifferentiatorTable from '@/components/sections/DifferentiatorTable.vue'
+import TestimonialsSection from '@/components/sections/TestimonialsSection.vue'
+import AuditCTASection from '@/components/sections/AuditCTASection.vue'
+import FAQSection from '@/components/sections/FAQSection.vue'
+import FooterCTA from '@/components/sections/FooterCTA.vue'
 </script>
